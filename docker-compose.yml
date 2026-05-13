@@ -1,0 +1,28 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: support_tool_db
+    environment:
+      MYSQL_DATABASE: support_tool
+      MYSQL_USER: support_tool
+      MYSQL_PASSWORD: suppor708209
+      MYSQL_ROOT_PASSWORD: Su990r7@t001
+    ports:
+      - "3309:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./SUPPORT.sql:/docker-entrypoint-initdb.d/SUPPORT.sql
+
+  app:
+    build: .
+    container_name: support_tool_app
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: support_tool
+      DB_PASS: suppor708209
+      DB_NAME: support_tool

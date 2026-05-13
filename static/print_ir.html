@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Incident Report</title>
+<style>
+/* base page */
+body{
+    font-family:Segoe UI, sans-serif;
+    color:#000;
+    margin:0;
+    padding:20px;
+}
+/* titles */
+.title{
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:4px;
+}
+.subtitle{
+    text-align:center;
+    font-size:14px;
+    margin-bottom:12px;
+}
+/* tables */
+table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    font-size:12px;
+}
+th, td{
+    border:1px solid #000;
+    padding:6px 8px;
+    vertical-align:top;
+}
+/* shading for header row */
+.main-table tr:first-child td{background:#eee;}
+/* small text blocks for lists */
+.small{
+    font-size:11px;
+    line-height:1.3;
+}
+/* verification box styling */
+.verify-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:4px;
+    font-size:11px;
+}
+.verify-table td{
+    border:1px solid #000;
+    padding:4px 6px;
+    height:18px;
+}
+/* section blocks below main table */
+.section-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+}
+.section-table td{
+    border:1px solid #000;
+    padding:4px 6px;
+    vertical-align:top;
+}
+.section-header{
+    background:#eee;
+    font-weight:bold;
+}
+/* remove old h3 styling not used anymore */
+</style>
+</head>
+<body onload="render()">
+
+<script>
+const ticket = JSON.parse(localStorage.getItem("print_ticket") || "{}");
+
+// if cif_no is not stored (older tickets) generate it from code+year
+if(ticket && !ticket.cif_no && ticket.ticket_code){
+    const numeric = ticket.ticket_code.replace(/^T/i, "");
+    const dateToUse = ticket.reported_date || ticket.created_at || new Date().toISOString();
+    const year = new Date(dateToUse).getFullYear();
+    ticket.cif_no = `${year}-${numeric.toString().padStart(4,'0')}`;
+}
+
+function render(){
+    // build HTML content using ticket object
+    document.body.innerHTML = `
+    <!-- header grid -->
+    <table style="width:100%; border:none;">
+      <tr>
+        <td style="text-align:center; border:1px solid #000; padding:4px 0; background:#eee;">
+          <span class="title">SOG Infosys and Techspire Solutions</span><br>
+          <span class="subtitle">Continuous Improvement Form / Incident Report (IR)</span>
+        </td>
+      </tr>
+    </table>
+
+    <table class="main-table">
+      <tr>
+        <td><strong>Date of complaint:</strong> ${(() => {
+          if (ticket.reported_date) {
+            const d = new Date(ticket.reported_date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            const month = monthNames[d.getMonth()];
+            const year = d.getFullYear();
+            const weekdayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            const weekday = weekdayNames[d.getDay()];
+            return `${day}-${month}-${year}, ${weekday}`;
+          }
+          return "-";
+        })()}</td>
+        <td><strong>CIF No.:</strong> ${ticket.cif_no || "-"}</td>
+      </tr>
+      <tr>
+        <td class="small">
+          <strong>Severity:</strong> ${ticket.severity || "-"}
+        </td>
+        <td>
+          <strong>Person Submitting Report:</strong> ${ticket.reported_person || "-"}<br>
+          <strong>Assigned To:</strong> ${ticket.assigned_to_name || "-"}
+        </td>
+      </tr>
+      <tr>
+        <td class="small">
+          <strong>Affected Users:</strong> ${ticket.affected_user ? ticket.affected_user : ""}
+          ${ticket.affected_user ? '<br><span class="small">(Single User / Department / All users / Others - Specify)</span><br><br>' : '<br><br>'}
+          <strong>Priority:</strong> ${ticket.priority || "-"}
+        </td>
+        <td>
+          <strong>Customer:</strong> ${ticket.reported_user_name || "-"}<br><br>
+          <strong>Modules:</strong> ${ticket.module_name || "-"}
+        </td>
+      </tr>
+    </table>
+
+    <!-- section table for descriptions -->
+    <table class="section-table">
+      <tr><td class="section-header">Problem Description</td></tr>
+      <tr><td style="height:60px;">${ticket.issue_desc || "-"}</td></tr>
+      <tr><td class="section-header">Root Cause of the Problem</td></tr>
+      <tr><td style="height:60px;">${ticket.root_cause || "-"}</td></tr>
+      <tr><td class="section-header">Corrective &amp; Preventive Action</td></tr>
+      <tr><td style="height:60px;">${ticket.solution || "-"}</td></tr>
+
+    </table>
+
+    <!-- verification box appearing after follow-up action -->
+    <table class="verify-table">
+      <tr>
+        <td style="height:20px;">
+          <span style="font-weight:bold;">Verified by:</span> ${ticket.reported_person || "-"}
+        </td>
+        <td>
+          <span style="font-weight:bold;">Date:</span> ${(() => {
+              if(ticket.updated_at){ return ticket.updated_at.slice(0,10); }
+              return "-";
+            })()}
+        </td>
+        <td>
+          <span style="font-weight:bold;">CIF closed by:</span> ${ticket.assigned_to_name || "-"}
+        </td>
+      </tr>
+    </table>
+`;
+
+    window.print();
+}
+
+window.onafterprint = () => {
+    localStorage.removeItem("print_ticket");
+};
+</script>
+
+</body>
+</html>

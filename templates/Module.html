@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Module Master</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* --- TICKET SYSTEM DESIGN APPLIED --- */
+
+/* CSS STYLES */
+body{margin:0;font-family:Segoe UI, sans-serif;background:#fff}
+.page{padding:14px}
+
+/* HEADER */
+.title-bar{background:#d6ece8;padding:8px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+.title-bar h2{margin:0;font-size:18px;color:#063b52}
+.new-btn{background:#ffb199;border:none;padding:6px 14px;border-radius:8px;font-size:14px;cursor:pointer}
+
+/* SEARCH & TABLE */
+.search-row{display:flex;justify-content:flex-end;margin:8px 0 10px}
+.search-row input{padding:6px 12px;width:300px;font-size:14px;border:1px solid #ccc;border-radius:8px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead tr{background:#b6e4e5}
+th,td{padding:8px 12px;border:1px solid #e0e0e0}
+tbody tr:nth-child(even){background:#fafafa}
+
+/* Link Styling */
+.module-link{color:#2c7be5;text-decoration:underline;cursor:pointer;font-weight:600;}
+.actions i{margin-right:8px;cursor:pointer}
+.edit{color:#2c7be5}
+.delete{color:#e63946}
+
+/* MODAL COMMON */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);justify-content:center;align-items:center;z-index:1000}
+.modal-content{
+  background:#fff;
+  width:600px; /* Smaller width for Module Master */
+  padding:20px 25px;
+  border-radius:14px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+
+/* FORM GRID */
+.form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr; /* 2 Columns for Module Form */
+  gap: 15px 20px;
+}
+
+label{font-weight:600;font-size:12px;display:block;margin-bottom:3px;color:#444}
+input,select{
+  width:100%;
+  padding:6px 8px;
+  font-size:13px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  height:36px;
+  box-sizing:border-box;
+}
+
+.full{grid-column:1/-1} 
+
+/* BUTTONS */
+.modal-footer{display:flex;justify-content:flex-end;margin-top:20px;gap:12px}
+.btn-cancel{background:#9e9e9e;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer}
+.btn-save{background:#1aaa8b;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer}
+
+</style>
+</head>
+
+<body>
+
+<div class="page">
+  <div class="title-bar">
+    <h2>Module Master</h2>
+    <button class="new-btn" id="btnOpenCreate">+ New</button>
+  </div>
+
+  <div class="search-row">
+    <input id="searchBox" placeholder="Search modules..." onkeyup="filterTable()">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Module Code</th>
+        <th>Module Name</th>
+        <th>Module Type</th>
+        <th>Project</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="modal" id="createModal">
+  <div class="modal-content">
+    <h3 id="modalTitle" style="text-align:center; margin-top:0">Add Module</h3>
+
+    <div class="form-grid">
+      <div class="full">
+        <label>Module Name *</label>
+        <input type="text" id="moduleName" placeholder="Enter module name">
+      </div>
+
+      <div>
+        <label>Module Type *</label>
+        <select id="moduleType">
+            <option value="">Select Module Type</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Project *</label>
+        <select id="projectCode">
+            <option value="">Select Project</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Status</label>
+        <select id="status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="document.getElementById('createModal').style.display='none'">Cancel</button>
+      <button class="btn-save" onclick="saveModule()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const BASE_API_URL = "http://127.0.0.1:8000"; // Matching your Module Master API
+
+// --- GLOBAL STATE ---
+let modulesList = [];
+let editingCode = null;
+const projectMap = {};
+const moduleTypeMap = {};
+
+// --- DOM ELEMENTS ---
+const tbody = document.getElementById("tbody");
+const createModal = document.getElementById("createModal");
+const modalTitle = document.getElementById("modalTitle");
+
+// Form Inputs
+const elName = document.getElementById("moduleName");
+const elType = document.getElementById("moduleType");
+const elProject = document.getElementById("projectCode");
+const elStatus = document.getElementById("status");
+
+// --- INITIALIZATION ---
+window.onload = async function() {
+  await loadDropdowns();
+  loadModules();
+  
+  // Attach Event Listeners
+  document.getElementById("btnOpenCreate").addEventListener("click", openCreateModal);
+};
+
+/* ================= API CALLS ================= */
+
+async function loadDropdowns() {
+  try {
+    // Load Projects
+    const projects = await fetch(`${BASE_API_URL}/api/projects`).then(res => res.json());
+    elProject.innerHTML = '<option value="">Select Project</option>';
+    projects.forEach(p => {
+        elProject.innerHTML += `<option value="${p.project_code}">${p.project_name}</option>`;
+        projectMap[p.project_code] = p.project_name;
+    });
+
+    // Load Module Types
+    const types = await fetch(`${BASE_API_URL}/api/module-type`).then(res => res.json());
+    elType.innerHTML = '<option value="">Select Module Type</option>';
+    types.forEach(m => {
+        elType.innerHTML += `<option value="${m.module_type_code}">${m.module_type_name}</option>`;
+        moduleTypeMap[m.module_type_code] = m.module_type_name;
+    });
+
+  } catch (error) {
+    console.error("Dropdown load error:", error);
+  }
+}
+
+async function loadModules(){
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/modules`);
+    if(!res.ok) throw new Error("Failed");
+    modulesList = await res.json();
+    renderTable(modulesList);
+  } catch(e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="6" style="color:red;text-align:center">Error loading modules.</td></tr>`;
+  }
+}
+
+async function saveModule() {
+  const data = {
+    module_name: elName.value.trim(),
+    module_type_code: elType.value,
+    project_code: elProject.value,
+    status: elStatus.value
+  };
+
+  if (!data.module_name || !data.module_type_code || !data.project_code) {
+    alert("Please fill all required fields (*)");
+    return;
+  }
+
+  const url = editingCode ? `${BASE_API_URL}/api/modules/${editingCode}` : `${BASE_API_URL}/api/modules`;
+  const method = editingCode ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.detail || result.message || "Save Failed");
+
+    alert(result.message || "Saved successfully");
+    createModal.style.display = "none";
+    loadModules(); 
+  } catch(e) {
+    console.error(e);
+    alert("Error: " + e.message);
+  }
+}
+
+async function deleteModule(code){
+  if(!confirm("Are you sure you want to delete this module?")) return;
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/modules/${code}`, { method: "DELETE" });
+    const result = await res.json();
+    if(res.ok) {
+        alert(result.message || "Deleted");
+        loadModules();
+    } else {
+        alert(result.message || "Deletion failed");
+    }
+  } catch(e){ console.error(e); }
+}
+
+/* ================= EDIT & UI ================= */
+
+function openCreateModal(){
+  editingCode = null;
+  modalTitle.innerText = "Add Module";
+
+  // Reset Form
+  elName.value = "";
+  elType.value = "";
+  elProject.value = "";
+  elStatus.value = "Active";
+  
+  createModal.style.display = "flex";
+}
+
+function editModule(code) {
+  const m = modulesList.find(x => x.module_code === code);
+  if (!m) return;
+
+  editingCode = code;
+  modalTitle.innerText = "Edit Module";
+
+  // Populate Form
+  elName.value = m.module_name || "";
+  elType.value = m.module_type_code || "";
+  elProject.value = m.project_code || "";
+  
+  // Handle Status normalization (API might return "1", 1, or "Active")
+  const s = m.status;
+  elStatus.value = (s === "1" || s === 1 || s === "Active") ? "Active" : "Inactive";
+
+  createModal.style.display = "flex";
+}
+
+function renderTable(data){
+  tbody.innerHTML = "";
+  data.forEach((m) => {
+    // Map codes to names using the maps loaded earlier
+    const typeName = moduleTypeMap[m.module_type_code] || m.module_type_code;
+    const projectName = projectMap[m.project_code] || m.project_code;
+
+    tbody.innerHTML += `
+      <tr>
+        <td><span class="module-link" onclick="editModule('${m.module_code}')">${m.module_code}</span></td>
+        <td>${m.module_name}</td>
+        <td>${typeName}</td>
+        <td>${projectName}</td>
+        <td>${m.status}</td>
+        <td class="actions">
+          <i class="fa fa-pen edit" onclick="editModule('${m.module_code}')"></i>
+          <i class="fa fa-times delete" onclick="deleteModule('${m.module_code}')"></i>
+        </td>
+      </tr>`;
+  });
+}
+
+function filterTable(){
+  const term = document.getElementById("searchBox").value.toLowerCase();
+  
+  const filtered = modulesList.filter(m => {
+    const combinedData = [
+      m.module_code,
+      m.module_name,
+      moduleTypeMap[m.module_type_code],
+      projectMap[m.project_code],
+      m.status
+    ].map(val => val ? val.toString().toLowerCase() : "").join(" ");
+
+    return combinedData.includes(term);
+  });
+  
+  renderTable(filtered);
+}
+</script>
+
+</body>
+</html>

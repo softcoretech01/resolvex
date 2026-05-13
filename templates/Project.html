@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Project Master</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* --- TICKET SYSTEM DESIGN APPLIED --- */
+
+/* CSS STYLES */
+body{margin:0;font-family:Segoe UI, sans-serif;background:#fff}
+.page{padding:14px}
+
+/* HEADER */
+.title-bar{background:#d6ece8;padding:8px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+.title-bar h2{margin:0;font-size:18px;color:#063b52}
+.new-btn{background:#ffb199;border:none;padding:6px 14px;border-radius:8px;font-size:14px;cursor:pointer}
+
+/* SEARCH & TABLE */
+.search-row{display:flex;justify-content:flex-end;margin:8px 0 10px}
+.search-row input{padding:6px 12px;width:300px;font-size:14px;border:1px solid #ccc;border-radius:8px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead tr{background:#b6e4e5}
+th,td{padding:8px 12px;border:1px solid #e0e0e0}
+tbody tr:nth-child(even){background:#fafafa}
+
+/* Actions Styling */
+.actions i{margin-right:8px;cursor:pointer}
+.edit{color:#2c7be5}
+.delete{color:#e63946}
+
+/* MODAL COMMON */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);justify-content:center;align-items:center;z-index:1000}
+.modal-content{
+  background:#fff;
+  width:900px; /* Wide modal for 3 columns */
+  padding:20px 25px;
+  border-radius:14px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+
+/* FORM GRID (3 Columns) */
+.form-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px 20px;
+}
+
+label{font-weight:600;font-size:12px;display:block;margin-bottom:3px;color:#444}
+input,select,textarea{
+  width:100%;
+  padding:6px 8px;
+  font-size:13px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  height:36px;
+  box-sizing:border-box;
+}
+
+/* Compact Textarea */
+textarea{
+  height:auto;
+  min-height:50px;
+  resize:vertical;
+  font-family: Segoe UI, sans-serif;
+}
+.full{grid-column:1/-1} 
+
+/* BUTTONS */
+.modal-footer{display:flex;justify-content:flex-end;margin-top:20px;gap:12px}
+.btn-cancel{background:#9e9e9e;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer}
+.btn-save{background:#1aaa8b;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer}
+
+</style>
+</head>
+
+<body>
+
+<div class="page">
+  <div class="title-bar">
+    <h2>Project Master</h2>
+    <button class="new-btn" id="btnOpenCreate">+ New</button>
+  </div>
+
+  <div class="search-row">
+    <input id="searchBox" placeholder="Search projects..." onkeyup="filterTable()">
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Project Name</th>
+        <th>Client</th>
+        <th>Type</th>
+        <th>Users</th>
+        <th>Frontend</th>
+        <th>Backend</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="modal" id="createModal">
+  <div class="modal-content">
+    <h3 id="modalTitle" style="text-align:center; margin-top:0">Add Project</h3>
+
+    <div class="form-grid">
+      <div>
+        <label>Project Name *</label>
+        <input type="text" id="projectName" placeholder="Project Name">
+      </div>
+      <div>
+        <label>Client *</label>
+        <select id="clientName">
+            <option value="">Select Client</option>
+        </select>
+      </div>
+      <div>
+        <label>Category</label>
+        <select id="category">
+          <option value="0">New Development</option>
+          <option value="1">Support</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Project Type *</label>
+        <select id="projectType">
+            <option value="">Select Type</option>
+        </select>
+      </div>
+      <div>
+        <label>Effective From</label>
+        <input type="date" id="effectiveFrom">
+      </div>
+      <div>
+        <label>Effective To</label>
+        <input type="date" id="effectiveTo">
+      </div>
+
+      <div>
+        <label>No. of Users</label>
+        <input type="number" id="numUsers" min="0" placeholder="0">
+      </div>
+      <div>
+        <label>Database Type *</label>
+        <select id="databaseType">
+            <option value="">Select DB</option>
+        </select>
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Front-End Tech *</label>
+        <select id="frontEndTech">
+            <option value="">Select Frontend</option>
+        </select>
+      </div>
+      <div style="grid-column: span 2;">
+        <label>Back-End Tech *</label>
+        <select id="backEndTech">
+            <option value="">Select Backend</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label>Description</label>
+        <textarea id="projectDesc" maxlength="250" placeholder="Project Description"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="document.getElementById('createModal').style.display='none'">Cancel</button>
+      <button class="btn-save" onclick="saveProject()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const BASE_API_URL = "http://127.0.0.1:8000";
+
+// --- GLOBAL STATE ---
+let projectsList = [];
+let editingCode = null;
+const clientMap = {}, frontendMap = {}, backendMap = {}, projectTypeMap = {};
+
+// --- DOM ELEMENTS ---
+const tbody = document.getElementById("tbody");
+const createModal = document.getElementById("createModal");
+const modalTitle = document.getElementById("modalTitle");
+
+// Form Inputs
+const elName = document.getElementById("projectName");
+const elClient = document.getElementById("clientName");
+const elCategory = document.getElementById("category");
+const elType = document.getElementById("projectType");
+const elUsers = document.getElementById("numUsers");
+const elFrom = document.getElementById("effectiveFrom");
+const elTo = document.getElementById("effectiveTo");
+const elDB = document.getElementById("databaseType");
+const elFront = document.getElementById("frontEndTech");
+const elBack = document.getElementById("backEndTech");
+const elStatus = document.getElementById("status");
+const elDesc = document.getElementById("projectDesc");
+
+// --- INITIALIZATION ---
+window.onload = async function() {
+  await loadDropdowns();
+  loadProjects();
+  document.getElementById("btnOpenCreate").addEventListener("click", openCreateModal);
+};
+
+/* ================= API CALLS ================= */
+
+async function loadDropdowns() {
+  try {
+    // Clients
+    const clients = await fetch(`${BASE_API_URL}/api/clients`).then(res => res.json());
+    elClient.innerHTML = '<option value="">Select Client</option>';
+    clients.forEach(c => {
+        elClient.innerHTML += `<option value="${c.client_code}">${c.client_name}</option>`;
+        clientMap[c.client_code] = c.client_name;
+    });
+
+    // Project Types
+    const types = await fetch(`${BASE_API_URL}/api/project-type`).then(res => res.json());
+    elType.innerHTML = '<option value="">Select Project Type</option>';
+    types.forEach(t => {
+        elType.innerHTML += `<option value="${t.project_type_code}">${t.project_type_name}</option>`;
+        projectTypeMap[t.project_type_code] = t.project_type_name;
+    });
+
+    // Frontend
+    const fronts = await fetch(`${BASE_API_URL}/api/frontend-tech`).then(res => res.json());
+    elFront.innerHTML = '<option value="">Select Frontend</option>';
+    fronts.forEach(f => {
+        elFront.innerHTML += `<option value="${f.tech_stack_code}">${f.tech_stack_name}</option>`;
+        frontendMap[f.tech_stack_code] = f.tech_stack_name;
+    });
+
+    // Backend
+    const backs = await fetch(`${BASE_API_URL}/api/backend-tech`).then(res => res.json());
+    elBack.innerHTML = '<option value="">Select Backend</option>';
+    backs.forEach(b => {
+        elBack.innerHTML += `<option value="${b.tech_stack_code}">${b.tech_stack_name}</option>`;
+        backendMap[b.tech_stack_code] = b.tech_stack_name;
+    });
+
+    // Databases
+    const dbs = await fetch(`${BASE_API_URL}/api/database-type`).then(res => res.json());
+    elDB.innerHTML = '<option value="">Select DB</option>';
+    dbs.forEach(d => {
+        const val = d.database_type_code || d.database_type_id;
+        elDB.innerHTML += `<option value="${val}">${d.database_type_name}</option>`;
+    });
+
+  } catch (error) {
+    console.error("Dropdown load error:", error);
+  }
+}
+
+async function loadProjects(){
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/projects`);
+    if(!res.ok) throw new Error("Failed");
+    projectsList = await res.json();
+    renderTable(projectsList);
+  } catch(e) {
+    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="9" style="color:red;text-align:center">Error loading projects.</td></tr>`;
+  }
+}
+
+async function saveProject() {
+  const data = {
+    project_name: elName.value.trim(),
+    client_code: elClient.value,
+    category: elCategory.value,
+    project_type_code: elType.value,
+    num_users: elUsers.value || "0",
+    effective_from: elFrom.value || null,
+    effective_to: elTo.value || null,
+    project_description: elDesc.value.trim(),
+    database_type_code: elDB.value,
+    front_end_tech_stack_code: elFront.value,
+    back_end_tech_stack_code: elBack.value,
+    status: elStatus.value
+  };
+
+  // Validation
+  const required = [data.project_name, data.client_code, data.project_type_code, data.database_type_code, data.front_end_tech_stack_code, data.back_end_tech_stack_code];
+  if (required.some(f => !f)) {
+    alert("Please fill all required fields (*)");
+    return;
+  }
+
+  const url = editingCode ? `${BASE_API_URL}/api/projects/${editingCode}` : `${BASE_API_URL}/api/projects`;
+  const method = editingCode ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.detail || result.message || "Save Failed");
+
+    alert(result.message || "Saved successfully");
+    createModal.style.display = "none";
+    loadProjects(); 
+  } catch(e) {
+    console.error(e);
+    alert("Error: " + e.message);
+  }
+}
+
+async function deleteProject(code){
+  if(!confirm("Are you sure you want to delete this project?")) return;
+  try {
+    const res = await fetch(`${BASE_API_URL}/api/projects/${code}`, { method: "DELETE" });
+    const result = await res.json();
+    if(res.ok) {
+        alert(result.message || "Deleted");
+        loadProjects();
+    } else {
+        alert(result.message || "Deletion failed");
+    }
+  } catch(e){ console.error(e); }
+}
+
+/* ================= EDIT & UI ================= */
+
+function openCreateModal(){
+  editingCode = null;
+  modalTitle.innerText = "Add Project";
+
+  // Reset Form
+  elName.value = "";
+  elClient.value = "";
+  elCategory.value = "0";
+  elType.value = "";
+  elUsers.value = "";
+  elFrom.value = "";
+  elTo.value = "";
+  elDesc.value = "";
+  elDB.value = "";
+  elFront.value = "";
+  elBack.value = "";
+  elStatus.value = "Active";
+  
+  createModal.style.display = "flex";
+}
+
+function editProject(code) {
+  const p = projectsList.find(x => x.project_code === code);
+  if (!p) return;
+
+  editingCode = code;
+  modalTitle.innerText = "Edit Project";
+
+  // Populate Form
+  elName.value = p.project_name || "";
+  elClient.value = p.client_code || "";
+  elCategory.value = (p.category === "0" || p.category === 0) ? "0" : "1";
+  elType.value = p.project_type_code || "";
+  elUsers.value = p.num_users || "";
+  elFrom.value = p.effective_from || "";
+  elTo.value = p.effective_to || "";
+  elDesc.value = p.project_description || "";
+  elDB.value = p.database_type_code || "";
+  elFront.value = p.front_end_tech_stack_code || "";
+  elBack.value = p.back_end_tech_stack_code || "";
+  
+  const s = p.status;
+  elStatus.value = (s === "1" || s === 1 || s === "Active") ? "Active" : "Inactive";
+
+  createModal.style.display = "flex";
+}
+
+function renderTable(data){
+  tbody.innerHTML = "";
+  data.forEach((p) => {
+    const clientName = clientMap[p.client_code] || p.client_code || "";
+    const typeName = projectTypeMap[p.project_type_code] || p.project_type_code || "";
+    const frontName = frontendMap[p.front_end_tech_stack_code] || p.front_end_tech_stack_code || "";
+    const backName = backendMap[p.back_end_tech_stack_code] || p.back_end_tech_stack_code || "";
+    const statusLabel = (p.status === "1" || p.status === 1 || p.status === "Active") ? "Active" : "Inactive";
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${p.project_code}</td>
+        <td>${p.project_name}</td>
+        <td>${clientName}</td>
+        <td>${typeName}</td>
+        <td>${p.num_users || "0"}</td>
+        <td>${frontName}</td>
+        <td>${backName}</td>
+        <td>${statusLabel}</td>
+        <td class="actions">
+          <i class="fa fa-pen edit" onclick="editProject('${p.project_code}')"></i>
+          <i class="fa fa-times delete" onclick="deleteProject('${p.project_code}')"></i>
+        </td>
+      </tr>`;
+  });
+}
+
+function filterTable(){
+  const term = document.getElementById("searchBox").value.toLowerCase();
+  
+  const filtered = projectsList.filter(p => {
+    // UPDATED: Combined all visual fields including Users, Frontend, Backend, Status
+    const combinedData = [
+      p.project_code,
+      p.project_name,
+      clientMap[p.client_code],
+      projectTypeMap[p.project_type_code],
+      p.num_users,
+      frontendMap[p.front_end_tech_stack_code],
+      backendMap[p.back_end_tech_stack_code],
+      p.status === "1" || p.status === 1 || p.status === "Active" ? "Active" : "Inactive"
+    ].map(val => val ? val.toString().toLowerCase() : "").join(" ");
+
+    return combinedData.includes(term);
+  });
+  
+  renderTable(filtered);
+}
+</script>
+
+</body>
+</html>

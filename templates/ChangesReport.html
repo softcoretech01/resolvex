@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Changes Report</title>
+    <style>
+        body { font-family:Segoe UI; padding:20px; background:#fff9f3; color:#333; }
+        h2 { margin-top: 30px; color:#0f2b3d; }
+        pre { background:#fafafa; border:1px solid #ddd; padding:15px; white-space:pre-wrap; word-wrap:break-word; }
+        .container { max-width:1000px; margin:0 auto; }
+        a.back { display:inline-block; margin-bottom:20px; text-decoration:none; color:#ff7a45; font-weight:600; }
+        a.back:hover { text-decoration:underline; }
+        /* tab styles */
+        .tabs { margin: 15px 0; }
+        .tab-btn { padding: 8px 16px; border: 1px solid #ccc; background: #eee; cursor: pointer; margin-right: 6px; }
+        .tab-btn.active { background: #fff; border-bottom: 2px solid orange; font-weight: bold; }
+        .tab-content { border: 1px solid #ccc; padding: 15px; background: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Technical Changes Report</h1>
+        <div style="margin-bottom:20px">
+            <a id="exportPdfBtn" href="/api/export_changes_pdf?type=db" target="_blank">📄 Export PDF</a>
+            |
+            <a id="downloadTxtBtn" href="/api/download_changes?type=db">⬇ Download TXT</a>
+        </div>
+        <a href="/pages/db-changes" target="_blank">Database Changes</a>
+        |
+        <a href="/pages/code-changes" target="_blank">Code Changes</a>
+        <div class="tabs">
+            <button class="tab-btn active" id="dbTabBtn" onclick="showTab('db')">Database Changes</button>
+            <button class="tab-btn" id="codeTabBtn" onclick="showTab('code')">Code Changes</button>
+        </div>
+        <div id="dbTab" class="tab-content">
+            <pre id="dbBox">Loading...</pre>
+        </div>
+        <div id="codeTab" class="tab-content" style="display:none">
+            <pre id="codeBox">Loading...</pre>
+        </div>
+    </div>
+        <script>
+function showTab(tab) {
+    document.getElementById('dbTab').style.display = tab === 'db' ? '' : 'none';
+    document.getElementById('codeTab').style.display = tab === 'code' ? '' : 'none';
+    document.getElementById('dbTabBtn').classList.toggle('active', tab === 'db');
+    document.getElementById('codeTabBtn').classList.toggle('active', tab === 'code');
+    
+    // Update Export Links
+    document.getElementById('exportPdfBtn').href = `/api/export_changes_pdf?type=${tab}`;
+    document.getElementById('downloadTxtBtn').href = `/api/download_changes?type=${tab}`;
+}
+
+fetch("/api/changes_report")
+    .then(res => res.json())
+    .then(data => {
+        const dbBox = document.getElementById("dbBox");
+        const codeBox = document.getElementById("codeBox");
+
+        // Render DB Changes
+        if (Array.isArray(data.db_changes) && data.db_changes.length > 0) {
+            dbBox.innerHTML = data.db_changes.map(log => {
+                let dateLine = `- ${log.date || ''} ${log.time || ''}`;
+                if (log.assigned_to) dateLine += ` - ${log.assigned_to}`;
+                return `<div style="margin-bottom:16px;">
+                    <pre style='margin:0;'><b>#############################################################</b>\n<b>${dateLine}</b>\n<b>DB Change:</b>\n${log.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+                </div>`;
+            }).join("");
+        } else {
+            dbBox.innerText = "No DB changes available";
+        }
+
+        // Render Code Changes
+        if (Array.isArray(data.code_changes) && data.code_changes.length > 0) {
+            codeBox.innerHTML = data.code_changes.map(log => {
+                let dateLine = `- ${log.date || ''} ${log.time || ''}`;
+                if (log.assigned_to) dateLine += ` - ${log.assigned_to}`;
+                return `<div style="margin-bottom:16px;">
+                    <pre style='margin:0;'><b>#############################################################</b>\n<b>${dateLine}</b>\n<b>Code Change:</b>\n${log.content.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+                </div>`;
+            }).join("");
+        } else {
+            codeBox.innerText = "No Code changes available";
+        }
+    });
+        </script>
+</body>
+</html>
