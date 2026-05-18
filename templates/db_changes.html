@@ -1,0 +1,28 @@
+<h2>Database Changes</h2>
+
+<pre style="white-space: pre-wrap;">
+{{ db_changes }}
+</pre>
+
+<a href="/pages/changes-report">← Back to Report</a>
+.then(data=>{
+
+    const rows = data.rows.filter(r=>r.db_changes);
+    const box = document.getElementById("dbBox");
+
+    if(!rows.length){
+        box.innerHTML = "No DB changes logged";
+        return;
+    }
+
+    box.innerHTML = rows.map(r=>`
+        <div class="entry">
+            <div class="ticket">${r.ticket_code}</div>
+            <div class="text">${r.db_changes}</div>
+        </div>
+    `).join("");
+});
+</script>
+
+</body>
+</html>

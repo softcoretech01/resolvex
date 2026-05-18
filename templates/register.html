@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .register-container {
+            background: #34495e;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 400px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-weight: 500;
+            color: #3498db;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #7f8c8d;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        button {
+            background: #27ae60;
+            color: white;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #229954;
+        }
+        .login-link {
+            display: block;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+            text-decoration: none;
+        }
+        .login-link:hover {
+            color: #3498db;
+        }
+        #error-message {
+            min-height: 20px;
+            color: #e74c3c;
+            margin-bottom: 9px;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-container">
+    <h2>Create Account</h2>
+    <form id="registerForm" autocomplete="off">
+        <input type="text" id="projUserName" placeholder="Full Name" required autocomplete="name">
+        <input type="email" id="username" placeholder="Email (Used as Username)" required autocomplete="username">
+        <input type="password" id="password" placeholder="Password" required autocomplete="new-password">
+        <select id="role" required>
+            <option value="" disabled selected>Select Role</option>
+            <option value="HELPDESK">Help Desk</option>
+            <option value="L2_DEVELOPER">L2 Developer</option>
+            <option value="L3_FULLSTACK">L3 Full Stack Developer</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+        <p id="error-message"></p>
+        <button type="submit">Register</button>
+    </form>
+    <a href="/login.html" class="login-link">Already have an account? Sign In</a>
+</div>
+
+<script>
+// Dynamic API endpoint for both local and deployed scenarios
+const API_URL = (window.location.hostname === "localhost" || window.location.hostname.startsWith("127."))
+  ? "http://127.0.0.1:8000/api/register"
+  : "/api/register";
+
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const projUserName = document.getElementById('projUserName').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const role = document.getElementById('role').value;
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.textContent = '';
+
+    if (!projUserName || !username || !password || !role) {
+        errorMessage.textContent = 'Please fill all fields.';
+        return;
+    }
+
+    try {
+        const payload = { 
+            project_user_name: projUserName,
+            user_name: username,
+            password: password,
+            user_role: role
+        };
+
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let result;
+        try { result = await res.json(); }
+        catch { throw new Error("Server returned invalid response."); }
+
+        if (!res.ok) {
+            throw new Error(result.detail || result.message || 'Registration failed.');
+        }
+
+        alert(result.message || "Registration successful. Please log in.");
+        window.location.href = '/login.html'; 
+
+    } catch (error) {
+        console.error('Registration failed:', error);
+        errorMessage.textContent = error.message || "Registration failed.";
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Techspire Support Dashboard</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #fff9f3;
+    color: #333;
+  }
+
+  /* --- HEADER --- */
+  header {
+    background: #fff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #ff7a45;
+  }
+
+  #user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 14px;
+    color: #555;
+  }
+
+  .user-details { text-align: right; line-height: 1.2; }
+  .user-details strong { display: block; color: #333; font-weight: 600; }
+  .user-details span { font-size: 12px; color: #888; font-weight: 400; }
+
+  #logoutBtn {
+    background: #ff7a45;
+    border: none;
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.3s;
+  }
+  #logoutBtn:hover { background: #e6602e; }
+
+  /* --- LAYOUT CONTAINERS --- */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 25px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f2b3d;
+  }
+
+  .section-title::before {
+    content: "";
+    width: 4px;
+    height: 1em;        /* ← This makes it match text height */
+    background: #ff6b3d;
+    margin-right: 10px;
+    border-radius: 2px;
+  }
+
+
+  /* --- NAVIGATION CARDS GRID --- */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+  }
+
+  .card {
+    background: linear-gradient(180deg, #fff4ec, #ffe8dd);
+    border-radius: 12px;
+    padding: 25px 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    text-decoration: none;
+    color: inherit;
+    display: none; /* Hidden by default */
+    opacity: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card.show { display: block; opacity: 1; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+  .icon-circle {
+    width: 55px; height: 55px;
+    margin: 0 auto 12px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .icon-circle i { font-size: 24px; color: #ff7a45; }
+  
+  .card h3 { font-size: 16px; font-weight: 600; margin: 0 0 4px 0; }
+  .card p { font-size: 12px; color: #777; margin: 0; }
+
+  /* --- ANALYTICS SECTION --- */
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+    margin-bottom: 50px;
+  }
+
+  .chart-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+  }
+
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 10px;
+  }
+  .chart-header h4 { margin: 0; font-size: 16px; color: #333; }
+  
+  .chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+  }
+
+  /* EXPORT BUTTON STYLE */
+  .export-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .export-btn:hover { background-color: #218838; }
+
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>ResolveX</h1>
+  <div id="user-info">
+    <div class="user-details" id="user-details-container">
+      <strong>User</strong><span>Role</span>
+    </div>
+    <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</header>
+
+<div class="container">
+  
+  <div class="section-title">Modules</div>
+  <div class="dashboard-grid">
+    <a class="card" id="card-Tickets" href="/pages/tickets">
+      <div class="icon-circle"><i class="fas fa-ticket-alt"></i></div>
+      <h3>Tickets</h3><p>View & Manage</p>
+    </a>
+    <a class="card" id="card-Module" href="/pages/modules">
+      <div class="icon-circle"><i class="fas fa-cubes"></i></div>
+      <h3>Modules</h3><p>System Modules</p>
+    </a>
+    <a class="card" id="card-ModuleType" href="/pages/module-type">
+      <div class="icon-circle"><i class="fas fa-layer-group"></i></div>
+      <h3>Module Types</h3><p>Categories</p>
+    </a>
+    <a class="card" id="card-Client" href="/pages/client">
+      <div class="icon-circle"><i class="fas fa-briefcase"></i></div>
+      <h3>Clients</h3><p>Client Database</p>
+    </a>
+    <a class="card" id="card-Project" href="/pages/projects">
+      <div class="icon-circle"><i class="fas fa-project-diagram"></i></div>
+      <h3>Projects</h3><p>Active Projects</p>
+    </a>
+    <a class="card" id="card-ProjUsers" href="/pages/project_users">
+      <div class="icon-circle"><i class="fas fa-users"></i></div>
+      <h3>Project Users</h3><p>Team Members</p>
+    </a>
+    <a class="card" id="card-BackendTech" href="/pages/backend-tech">
+      <div class="icon-circle"><i class="fas fa-server"></i></div>
+      <h3>Backend Tech</h3><p>Server Stack</p>
+    </a>
+    <a class="card" id="card-FrontendTech" href="/pages/frontend-tech">
+      <div class="icon-circle"><i class="fas fa-code"></i></div>
+      <h3>Frontend Tech</h3><p>UI Stack</p>
+    </a>
+    <a class="card" id="card-DBType" href="/pages/database-type">
+      <div class="icon-circle"><i class="fas fa-database"></i></div>
+      <h3>DB Types</h3><p>Databases</p>
+    </a>
+    <a class="card" id="card-ProType" href="/pages/project-type">
+      <div class="icon-circle"><i class="fas fa-tasks"></i></div>
+      <h3>Project Types</h3><p>Classifications</p>
+    </a>
+  </div>
+
+  <!-- analytics heading and report button laid out in grid so button sits above module chart -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; align-items:center; margin-bottom:10px;">
+      <div><h2 class="section-title" style="margin:0;">Analytics Overview</h2></div>
+      <div style="text-align:right;">
+          <button onclick="openChangesReport()"
+              style="
+                  background:#ff7f50;
+                  color:white;
+                  border:none;
+                  padding:8px 16px;
+                  border-radius:6px;
+                  cursor:pointer;
+                  font-weight:600;
+              ">
+              Changes Report
+          </button>
+      </div>
+  </div>
+  <div class="analytics-grid">
+    
+    <div class="chart-card">
+      <div class="chart-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h4 style="margin:0;"><i class="fas fa-chart-pie" style="color:#ff7a45"></i> Tickets by Status</h4>
+        <div style="display:flex;gap:6px;">
+          <button class="export-btn" onclick="exportToExcel()">
+              <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+          <button class="export-btn" style="background:#28a745;" onclick="exportWeeklyReport()">
+              <i class="fas fa-file-excel"></i> Weekly report
+          </button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <h4><i class="fas fa-chart-bar" style="color:#1abc9c"></i> Tickets by Module</h4>
+      </div>
+      <div class="chart-container">
+        <canvas id="moduleChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const LOGIN_PATH = '/login.html';
+// Ensure this API URL matches your running backend
+const API_TICKETS = 'http://127.0.0.1:8000/api/tickets'; 
+
+// Global variable to store ticket data for export
+let globalTicketData = [];
+
+// RBAC
+const ACCESS_CONTROL_MAP = {
+  "ADMIN": ["BackendTech","FrontendTech","DBType","ModuleType","Client","ProType","Project","Module","ProjUsers","Tickets"],
+  "L2_DEVELOPER": ["Tickets"],
+  "L3_FULLSTACK": ["Tickets"],
+  "HELPDESK": ["BackendTech","FrontendTech","DBType","ModuleType","ProType","Module","ProjUsers","Tickets"]
+};
+
+function handleLogout() {
+  localStorage.clear();
+  window.location.href = LOGIN_PATH;
+}
+
+function applyAccessControl() {
+  const role = localStorage.getItem("userRole");
+  const user = localStorage.getItem("userName") || "User";
+
+  if (!role) { window.location.href = LOGIN_PATH; return; }
+
+  document.getElementById("user-details-container").innerHTML = `<strong>${user}</strong><span>${role.replace(/_/g," ")}</span>`;
+
+  const allowed = ACCESS_CONTROL_MAP[role] || [];
+  document.querySelectorAll(".card").forEach(card => {
+    const id = card.id.replace("card-", "");
+    if (allowed.includes(id)) card.classList.add("show");
+  });
+}
+
+// --- ANALYTICS & EXPORT LOGIC ---
+async function fetchAnalytics() {
+  try {
+    const res = await fetch(API_TICKETS);
+    if (!res.ok) throw new Error("Failed to load tickets");
+    const tickets = await res.json();
+    
+    // Store data globally for export
+    globalTicketData = tickets;
+
+    processCharts(tickets);
+  } catch(e) {
+    console.error("Analytics Error:", e);
+  }
+}
+
+function processCharts(data) {
+  // 1. Status Data
+  const statusCounts = {};
+  data.forEach(t => {
+    const status = t.status || "Open";
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+
+  // 2. Module Data
+  const moduleCounts = {};
+  data.forEach(t => {
+    const mod = t.module_name || "Unknown";
+    moduleCounts[mod] = (moduleCounts[mod] || 0) + 1;
+  });
+
+  // 3. Render Status Pie Chart
+  const ctxStatus = document.getElementById('statusChart').getContext('2d');
+  new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(statusCounts),
+      datasets: [{
+        data: Object.values(statusCounts),
+        backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#6c757d', '#dc3545'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' } }
+    }
+  });
+
+  // 4. Render Module Bar Chart
+  const ctxModule = document.getElementById('moduleChart').getContext('2d');
+  new Chart(ctxModule, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(moduleCounts),
+      datasets: [{
+        label: 'Ticket Count',
+        data: Object.values(moduleCounts),
+        backgroundColor: '#ff7a45',
+        borderRadius: 5
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+// --- CLEAN EXPORT FUNCTION ---
+function exportToExcel() {
+    if (!globalTicketData || globalTicketData.length === 0) {
+        alert("No data available to export.");
+        return;
+    }
+
+    // Map only the specific, readable columns you want
+    const exportData = globalTicketData.map(t => ({
+        "Ticket Date": (() => {
+            if (!t.reported_date) return "";
+            const parts = t.reported_date.split("-");
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return t.reported_date;
+        })(),
+        "Ticket No": t.ticket_code,
+        "Project": t.project_name,
+        "Module Type": t.module_type_name,
+        "Module": t.module_name,
+        "Issue Type": t.issue_short,
+        "Description": t.issue_desc,
+        "Client": t.reported_user_name,
+        "Assigned To": t.assigned_to_name,
+        "Priority": t.priority,
+        "Severity": t.severity,
+        "Status": t.status,
+        "Target Date": (() => {
+          if (!t.target_date) return "";
+          const parts = t.target_date.split("-");
+          if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+          return t.target_date;
+        })(),
+        "Root Cause": t.root_cause,
+        "Solution": t.solution,
+        "Time Spent": t.actual_time_spent,
+        "Total Time Spent": t.total_time_spent || (() => {
+            if (!t.created_at) return "-";
+            const start = new Date(t.created_at);
+            const end = new Date();
+            const diffMs = end - start;
+            if (diffMs < 0) return "0m";
+            const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            let r = "";
+            if (d > 0) r += `${d}d `;
+            if (h > 0) r += `${h}h `;
+            r += `${m}m`;
+            return r;
+        })()
+    }));
+
+    // Create Workbook & Worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData, { dateNF: 'dd-mm-yyyy' });
+    
+
+    // Optional: Auto-width roughly for better visibility
+    // Use a smaller width for ticket date and allow other columns a bit wider
+    const wscols = Object.keys(exportData[0]).map(k => {
+        if (k === "Ticket Date") return { wch: 12 };
+        // base width on header length + some padding
+        const len = Math.max(15, k.length + 5);
+        return { wch: len };
+    });
+    ws['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Tickets_Data");
+    XLSX.writeFile(wb, "Techspire_Tickets_Export.xlsx");
+}
+
+// --- Weekly Report Export ---
+function exportWeeklyReport() {
+    if (!globalTicketData || !globalTicketData.length) {
+        alert("No ticket data to export.");
+        return;
+    }
+    // Get current week range (Monday to Sunday)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sunday, 1=Monday, ...
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+    monday.setHours(0,0,0,0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23,59,59,999);
+    const weeklyTickets = globalTicketData.filter(t => {
+        if (!t.reported_date) return false;
+        const parts = t.reported_date.split("-");
+        if (parts.length === 3) {
+            // Assume format yyyy-mm-dd
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            return d >= monday && d <= sunday;
+        }
+        return false;
+    });
+    const exportData = weeklyTickets.map(t => ({
+        "Ticket No": t.ticket_code,
+        "Ticket Date": (() => {
+            if (!t.reported_date) return "";
+            const parts = t.reported_date.split("-");
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return t.reported_date;
+        })(),
+        "Reported Person": t.reported_person,
+        "Issue": t.issue_short,
+        "Assigned To": t.assigned_to_name,
+        "Description": t.issue_desc,
+        "Status": t.status
+    }));
+    if (!exportData.length) {
+        alert("No tickets found for this week.");
+        return;
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData, { dateNF: 'dd-mm-yyyy' });
+    ws['!cols'] = [
+        { wch: 12 }, // Ticket No
+        { wch: 12 }, // Ticket Date
+        { wch: 18 }, // Reported Person
+        { wch: 20 }, // Issue
+        { wch: 18 }, // Assigned To
+        { wch: 30 }, // Description
+        { wch: 12 }  // Status
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Weekly_Report");
+    XLSX.writeFile(wb, "Techspire_Weekly_Report.xlsx");
+}
+
+// Init
+document.getElementById("logoutBtn").onclick = handleLogout;
+applyAccessControl();
+fetchAnalytics(); 
+
+// --- Changes modal helpers ---
+function openChangesModal(){
+    document.getElementById("changesModal").style.display = "flex";
+}
+
+function closeChangesModal(){
+    document.getElementById("changesModal").style.display = "none";
+}
+
+async function saveChanges(){
+    const db = document.getElementById("change_db").value;
+    const code = document.getElementById("change_code").value;
+
+    if(!db && !code){
+        alert("Nothing to save");
+        return;
+    }
+
+    const res = await fetch("http://127.0.0.1:8000/api/common/save_changes",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            db_changes: db,
+            code_changes: code
+        })
+    });
+
+    if(res.ok){
+        alert("Changes saved to log files ✔");
+        closeChangesModal();
+        document.getElementById("change_db").value="";
+        document.getElementById("change_code").value="";
+    }else{
+        alert("Failed to save changes");
+    }
+}
+
+function openChangesReport() {
+  // open the all-tickets changes report page in a new tab
+  window.open("/pages/changes-report", "_blank");
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Master</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<style>
+  body { font-family: 'Roboto', sans-serif; margin: 0; background: #f5f7fa; color: #333; }
+  .container { max-width: 1100px; margin: 20px auto; background: #fff; border-radius: 12px; padding: 25px 30px; box-shadow: 0 8px 30px rgba(0,0,0,0.1);}
+  h2 { text-align: center; margin: 20px 0 30px; font-weight: 600; color: #2c3e50;}
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+  button { background: #1abc9c; color: #fff; border: none; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-weight: 500; transition: background 0.3s; font-size: 14px;}
+  button:hover { background: #16a085; }
+  #searchBox { padding: 10px 15px; border: 1.5px solid #ccc; border-radius: 25px; font-size: 14px; width: 250px;}
+  table { width: 100%; border-collapse: collapse; font-size: 14px;}
+  th, td { padding: 14px 12px; border-bottom: 1px solid #eee; text-align: left; }
+  th { background: #1abc9c; color: #fff; cursor: pointer; user-select: none;}
+  tbody tr:hover { background: #e0f7f4; }
+  .actions i { margin: 0 6px; cursor: pointer; color: #7f8c8d;}
+  .actions i:hover { color: #1abc9c; }
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;}
+  .modal-content { background: #fff; border-radius: 12px; padding: 25px; width: 400px; max-width: 90%; box-shadow: 0 12px 40px rgba(0,0,0,0.2);}
+  .modal-content h3 { margin-top: 0; text-align: center; color: #2c3e50;}
+  .modal-buttons { margin-top: 20px; text-align: right; }
+  .modal-buttons button { margin-left: 10px;}
+  .modal-buttons button:first-child { background: #e74c3c; }
+  .modal-buttons button:first-child:hover { background: #c0392b; }
+  .modal-buttons button:last-child { background: #1abc9c;}
+  .modal-buttons button:last-child:hover { background: #16a085; }
+</style>
+</head>
+<body>
+
+<h2>Menu Master</h2>
+<div class="container">
+  <div class="header">
+    <button id="openModalBtn">+ Add Menu</button>
+    <input type="text" id="searchBox" placeholder="Search menus...">
+  </div>
+
+  <table id="menuTable">
+    <thead>
+      <tr>
+        <th>Menu Code</th>
+        <th>Menu Name</th>
+        <th>Project</th>
+        <th>Module</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Modal for Add/Edit Menu -->
+<div id="menuModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Add Menu</h3>
+    <input type="hidden" id="menu_code" />
+
+    <input type="text" id="menu_name" placeholder="Menu Name" />
+
+    <!-- Project Dropdown -->
+    <select id="project_code"><option value="">Loading Projects...</option></select>
+
+    <!-- Module Dropdown -->
+    <select id="module_code"><option value="">Select Project First</option></select>
+
+    <div>
+      <label><input type="radio" name="status" value="Active" checked> Active</label>
+      <label><input type="radio" name="status" value="Inactive"> Inactive</label>
+    </div>
+
+    <div class="modal-buttons">
+      <button id="closeModalBtn">Cancel</button>
+      <button id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let editCode = null;
+const modal = document.getElementById("menuModal");
+let projectMap = {}, moduleMap = {};
+
+async function loadProjectsDropdown() {
+  try {
+    const res = await fetch("/api/projects");
+    const projects = await res.json();
+    const projectSelect = document.getElementById("project_code");
+    projectSelect.innerHTML = '<option value="">Select Project</option>';
+    projectMap = {};
+    projects.forEach(p => {
+      projectSelect.innerHTML += `<option value="${p.project_code}">${p.project_name}</option>`;
+      projectMap[p.project_code] = p.project_name;
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load projects!");
+  }
+}
+
+async function loadModulesByProject(projectCode) {
+  try {
+    const res = await fetch(`/api/modules?project_code=${projectCode}`);
+    const modules = await res.json();
+    const moduleSelect = document.getElementById("module_code");
+    moduleSelect.innerHTML = '<option value="">Select Module</option>';
+    moduleMap = {};
+    modules.forEach(m => {
+      moduleSelect.innerHTML += `<option value="${m.module_code}">${m.module_name}</option>`;
+      moduleMap[m.module_code] = m.module_name;
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load modules for this project!");
+  }
+}
+
+async function loadMenus() {
+  try {
+    const res = await fetch("/api/menu");
+    const data = await res.json();
+    const tbody = document.querySelector("#menuTable tbody");
+    tbody.innerHTML = "";
+    data.forEach(item => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.menu_code}</td>
+        <td>${item.menu_name}</td>
+        <td>${item.project_text || ""}</td>
+        <td>${item.module_text || ""}</td>
+        <td>${item.status}</td>
+        <td class="actions">
+          <i class="fa fa-edit" onclick="editMenu('${item.menu_code}')"></i>
+          <i class="fa fa-trash" onclick="deleteMenu('${item.menu_code}')"></i>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load menus!");
+  }
+}
+
+document.getElementById("openModalBtn").onclick = async () => {
+  editCode = null;
+  document.getElementById("modalTitle").innerText = "Add Menu";
+  document.getElementById("menu_code").value = "";
+  document.getElementById("menu_name").value = "";
+  await loadProjectsDropdown();
+  document.getElementById("project_code").value = "";
+  document.getElementById("module_code").innerHTML = '<option value="">Select Project First</option>';
+  document.querySelector('input[name="status"][value="Active"]').checked = true;
+  modal.style.display = "flex";
+};
+
+document.getElementById("project_code").addEventListener("change", async (e) => {
+  const projectCode = e.target.value;
+  if (projectCode) {
+    await loadModulesByProject(projectCode);
+  } else {
+    document.getElementById("module_code").innerHTML = '<option value="">Select Project First</option>';
+  }
+});
+
+document.getElementById("closeModalBtn").onclick = () => (modal.style.display = "none");
+window.onclick = e => { if (e.target == modal) modal.style.display = "none"; };
+
+document.getElementById("saveBtn").onclick = async () => {
+  const payload = {
+    menu_name: document.getElementById("menu_name").value.trim(),
+    module_code: document.getElementById("module_code").value,
+    project_code: document.getElementById("project_code").value,
+    status: document.querySelector('input[name="status"]:checked').value === "Active" ? 1 : 0
+  };
+
+  if (!payload.menu_name || !payload.module_code || !payload.project_code) {
+    alert("All fields are required!");
+    return;
+  }
+
+  const url = editCode ? `/api/menu/${editCode}` : "/api/menu";
+  const method = editCode ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      let msg = result.detail || result.message || JSON.stringify(result);
+      throw new Error(msg);
+    }
+    alert(result.message || "Saved successfully!");
+    modal.style.display = "none";
+    await loadMenus();
+  } catch (err) {
+    let displayMsg = (err && err.message && typeof err.message !== "object") ? err.message : JSON.stringify(err, Object.getOwnPropertyNames(err));
+    alert("Error: " + displayMsg);
+  }
+};
+
+async function editMenu(code) {
+  const res = await fetch("/api/menu");
+  const data = await res.json();
+  const item = data.find(m => m.menu_code === code);
+  if (!item) {
+    alert("Menu not found!");
+    return;
+  }
+
+  editCode = code;
+  document.getElementById("modalTitle").innerText = "Edit Menu";
+  document.getElementById("menu_code").value = item.menu_code;
+  document.getElementById("menu_name").value = item.menu_name;
+
+  await loadProjectsDropdown();
+
+  // Pre-select the correct project
+  const projectCode = Object.keys(projectMap).find(k => projectMap[k] === item.project_text);
+  if (projectCode) {
+    document.getElementById("project_code").value = projectCode;
+    await loadModulesByProject(projectCode);
+  } else {
+    document.getElementById("project_code").value = "";
+    document.getElementById("module_code").innerHTML = '<option value="">Select Project First</option>';
+  }
+
+  // Pre-select module
+  const moduleCode = Object.keys(moduleMap).find(k => moduleMap[k] === item.module_text);
+  if (moduleCode) {
+    document.getElementById("module_code").value = moduleCode;
+  }
+
+  // Set status
+  if (["1", 1, "Active"].includes(item.status)) {
+    document.querySelector('input[name="status"][value="Active"]').checked = true;
+  } else {
+    document.querySelector('input[name="status"][value="Inactive"]').checked = true;
+  }
+
+  modal.style.display = "flex";
+}
+
+async function deleteMenu(code) {
+  if (!confirm(`Delete menu ${code}?`)) return;
+  try {
+    const res = await fetch(`/api/menu/${code}`, { method: "DELETE" });
+    const result = await res.json();
+    alert(result.message || "Deleted successfully");
+    await loadMenus();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+document.getElementById("searchBox").addEventListener("keyup", function () {
+  const keyword = this.value.toLowerCase();
+  document.querySelectorAll("#menuTable tbody tr").forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(keyword) ? "" : "none";
+  });
+});
+
+function sortTable(n) {
+  const table = document.getElementById("menuTable");
+  let switching = true, dir = "asc", switchcount = 0;
+  while (switching) {
+    switching = false;
+    const rows = table.rows;
+    for (let i = 1; i < rows.length - 1; i++) {
+      let shouldSwitch = false;
+      let x = rows[i].getElementsByTagName("TD")[n];
+      let y = rows[i + 1].getElementsByTagName("TD")[n];
+      if (
+        (dir === "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) ||
+        (dir === "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase())
+      ) {
+        shouldSwitch = true;
+        break;
+      }
+    }
+    if (shouldSwitch) {
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+      switchcount++;
+    } else if (switchcount === 0 && dir === "asc") {
+      dir = "desc";
+      switching = true;
+    }
+  }
+}
+
+window.onload = loadMenus;
+</script>
+</body>
+</html>
