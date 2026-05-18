@@ -7,7 +7,7 @@ import traceback
 
 router = APIRouter(tags=["Projects"])
 
-
+@router.get("", summary="Get all projects")
 @router.get("/", summary="Get all projects")
 def get_projects():
     try:
@@ -38,7 +38,7 @@ def get_projects():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Error fetching projects")
 
-
+@router.post("", summary="Add a new project")
 @router.post("/", summary="Add a new project")
 def add_project(data: ProjectCreate):
     try:

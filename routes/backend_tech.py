@@ -6,6 +6,7 @@ import traceback
 
 router = APIRouter()
 
+@router.get("", summary="Get all module types")
 @router.post("/", summary="Add a new backend tech stack")
 def add_backend_tech_stack(data: BackendTechCreate):
     try:
@@ -32,7 +33,7 @@ def add_backend_tech_stack(data: BackendTechCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error saving backend tech stack: {str(e)}")
 
-
+@router.get("", summary="Get all backend tech stacks")
 @router.get("/", summary="Get all backend tech stacks")
 def get_backend_tech_stacks():
     try:

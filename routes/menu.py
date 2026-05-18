@@ -55,6 +55,7 @@ def get_menus_by_module(project_code: str, module_code: str):
 # ----------------------------------------------
 # 3. FETCH ALL MENUS (FULL TABLE LISTING)
 # ----------------------------------------------
+@router.get("", summary="Get all menus")
 @router.get("/", summary="Get all menus")
 def get_menus():
     try:
@@ -85,6 +86,7 @@ def get_menus():
 # ----------------------------------------------
 # 4. CREATE NEW MENU
 # ----------------------------------------------
+@router.post("", summary="Add a new menu")
 @router.post("/", summary="Add a new menu")
 def add_menu(data: MenuCreate):
     try:

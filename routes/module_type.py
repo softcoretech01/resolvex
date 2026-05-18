@@ -6,6 +6,7 @@ import traceback
 
 router = APIRouter(tags=["Module Type"])
 
+@router.post("", summary="Add a new module type")
 @router.post("/", summary="Add a new module type")
 def add_module_type(data: ModuleTypeCreate):
     try:
@@ -32,6 +33,7 @@ def add_module_type(data: ModuleTypeCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error saving module type: {str(e)}")
 
+@router.get("", summary="Get all module types")
 @router.get("/", summary="Get all module types")
 def get_module_types():
     try:

@@ -12,6 +12,7 @@ CATEGORY_REVERSE_MAP = {"0": 0, "1": 1, 0: 0, 1: 1, "new": 0, "support": 1}
 def convert_status(status_str):
     return 1 if str(status_str).strip().lower() == "active" else 0
 
+@router.post("", summary="Add a new project type")
 @router.post("/", summary="Add a new project type")
 def add_project_type(data: ProjectTypeCreate):
     try:
@@ -40,6 +41,7 @@ def add_project_type(data: ProjectTypeCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Error saving project type")
 
+@router.get("", summary="Get all project types")
 @router.get("/", summary="Get all project types")
 def get_project_types():
     try:

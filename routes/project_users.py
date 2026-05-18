@@ -74,6 +74,7 @@ def get_modules_options():
 
 
 # ---------------- ADD (POST) ----------------
+@router.post("", summary="Assign a user to a project")
 @router.post("/", summary="Assign a user to a project")
 def add_project_user(data: ProjectUserCreate):
     try:
@@ -126,6 +127,7 @@ def add_project_user(data: ProjectUserCreate):
 
 
 # ---------------- GET ALL ----------------
+@router.get("", summary="Get all project users")
 @router.get("/", summary="Get all project users")
 def get_project_users():
     try:

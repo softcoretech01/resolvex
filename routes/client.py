@@ -6,6 +6,7 @@ import traceback
 
 router = APIRouter(tags=["Client"])
 
+@router.post("", summary="Add a new client")
 @router.post("/", summary="Add a new client")
 def add_client(data: ClientCreate):
     try:
@@ -32,7 +33,7 @@ def add_client(data: ClientCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error saving client: {str(e)}")
 
-
+@router.get("", summary="Get all clients")
 @router.get("/", summary="Get all clients")
 def get_clients():
     try:

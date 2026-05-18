@@ -6,6 +6,7 @@ import traceback
 
 router = APIRouter(tags=["Modules"])
 
+@router.post("", summary="Add a new module")
 @router.post("/", summary="Add a new module")
 def add_module(data: ModuleCreate):
     try:
@@ -28,6 +29,7 @@ def add_module(data: ModuleCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("", summary="Get all modules")
 @router.get("/", summary="Get all modules")
 def get_modules():
     try:

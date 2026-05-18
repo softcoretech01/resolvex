@@ -6,6 +6,7 @@ import traceback
 
 router = APIRouter()
 
+@router.post("", summary="Add a new database type")
 @router.post("/", summary="Add a new database type")
 def add_database_type(data: DatabaseTypeCreate):
     try:
@@ -31,6 +32,7 @@ def add_database_type(data: DatabaseTypeCreate):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error saving database type: {str(e)}")
 
+@router.get("", summary="Get all database types")
 @router.get("/", summary="Get all database types")
 def get_database_types():
     try:
