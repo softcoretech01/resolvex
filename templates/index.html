@@ -286,8 +286,10 @@
 
 <script>
 const LOGIN_PATH = '/login.html';
-// Ensure this API URL matches your running backend
-const API_TICKETS = 'http://127.0.0.1:8000/api/tickets'; 
+const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file") 
+    ? "http://127.0.0.1:8000" 
+    : window.location.origin;
+const API_TICKETS = `${BASE_API_URL}/api/tickets`; 
 
 // Global variable to store ticket data for export
 let globalTicketData = [];
@@ -547,7 +549,7 @@ async function saveChanges(){
         return;
     }
 
-    const res = await fetch("http://127.0.0.1:8000/api/common/save_changes",{
+    const res = await fetch(`${BASE_API_URL}/api/common/save_changes`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({

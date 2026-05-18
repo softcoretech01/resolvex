@@ -140,7 +140,9 @@ input,select{
 
 <script>
 // --- CONFIGURATION ---
-const BASE_API_URL = "http://127.0.0.1:8000"; // Matching your Module Master API
+const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file") 
+    ? "http://127.0.0.1:8000" 
+    : window.location.origin;
 
 // --- GLOBAL STATE ---
 let modulesList = [];

@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    container_name: resolvex_backend
+    ports:
+      - "5000:5000"
+
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 3310
+      DB_USER: support_tool
+      DB_PASS: suppor708209
+      DB_NAME: support_tool
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      - resolvex_default
+      - web_network
+
+    restart: unless-stopped
+
+
+networks:
+  resolvex_default:
+    external: true
+
+  web_network:
+    external: true

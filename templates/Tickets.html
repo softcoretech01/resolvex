@@ -367,7 +367,10 @@
 
   <script>
 
-    const API_BASE = "http://127.0.0.1:8000/api/tickets";
+    const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file") 
+        ? "http://127.0.0.1:8000" 
+        : window.location.origin;
+    const API_BASE = `${BASE_API_URL}/api/tickets`;
     let tickets = [];
     let currentTicketCode = null;
     let currentTicketData = null;
