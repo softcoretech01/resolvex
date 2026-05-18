@@ -136,9 +136,9 @@ def get_tickets():
             ORDER BY tm.ticket_id DESC
         """
         return execute_query(query, fetch=True)
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Error fetching tickets")
+        raise HTTPException(status_code=500, detail=f"Error fetching tickets: {str(e)}")
 
 
 @router.post("", summary="Add a new ticket")
