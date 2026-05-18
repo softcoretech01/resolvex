@@ -6,7 +6,11 @@ queries = [
     "ALTER TABLE ticket_master ADD COLUMN db_changes TEXT NULL;",
     "ALTER TABLE ticket_master ADD COLUMN code_changes TEXT NULL;",
     "ALTER TABLE ticket_master ADD COLUMN reported_person VARCHAR(255) NULL;",
-    "ALTER TABLE ticket_master ADD COLUMN short_name VARCHAR(100) NULL;"
+    "ALTER TABLE ticket_master ADD COLUMN short_name VARCHAR(100) NULL;",
+    "ALTER TABLE ticket_master ADD COLUMN affected_user VARCHAR(255) NULL;",
+    "ALTER TABLE ticket_master ADD COLUMN environment VARCHAR(255) NULL;",
+    "ALTER TABLE ticket_master ADD COLUMN sql_script TEXT NULL;",
+    "ALTER TABLE ticket_master ADD COLUMN sql_attachment VARCHAR(255) NULL;"
 ]
 
 print("Starting database update...")
