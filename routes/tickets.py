@@ -104,7 +104,7 @@ def tickets_dropdown_project_users(project_code: Optional[str] = Query(None)):
 # ----------------------------------------------
 # MAIN CRUD OPERATIONS
 # ----------------------------------------------
-
+@router.get("", summary="Get all tickets")
 @router.get("/", summary="Get all tickets")
 def get_tickets():
     try:
@@ -141,7 +141,7 @@ def get_tickets():
         raise HTTPException(status_code=500, detail="Error fetching tickets")
 
 
-@router.post("/", summary="Add a new ticket")
+@router.post("", summary="Add a new ticket")
 @router.post("/", summary="Add a new ticket")
 def add_ticket(
     project_code: str = Form(...),
