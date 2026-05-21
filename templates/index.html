@@ -430,21 +430,38 @@ function exportToExcel() {
         "Root Cause": t.root_cause,
         "Solution": t.solution,
         "Time Spent": t.actual_time_spent,
-        "Total Time Spent": t.total_time_spent || (() => {
-            if (!t.created_at) return "-";
-            const start = new Date(t.created_at);
-            const end = new Date();
-            const diffMs = end - start;
-            if (diffMs < 0) return "0m";
-            const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            let r = "";
-            if (d > 0) r += `${d}d `;
-            if (h > 0) r += `${h}h `;
-            r += `${m}m`;
-            return r;
-        })()
+        "Total Time Spent": (t.status === 'Closed')
+          ? (t.total_time_spent || (() => {
+              if (!t.created_at || !t.updated_at) return "-";
+              const start = new Date(t.created_at);
+              const end = new Date(t.updated_at);
+              if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-";
+              const diffMs = end - start;
+              if (diffMs < 0) return "0m";
+              const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              let r = "";
+              if (d > 0) r += `${d}d `;
+              if (h > 0) r += `${h}h `;
+              r += `${m}m`;
+              return r;
+            })())
+          : (() => {
+              if (!t.created_at) return "-";
+              const start = new Date(t.created_at);
+              const end = new Date();
+              const diffMs = end - start;
+              if (diffMs < 0) return "0m";
+              const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              let r = "";
+              if (d > 0) r += `${d}d `;
+              if (h > 0) r += `${h}h `;
+              r += `${m}m`;
+              return r;
+          })()
     }));
 
     // Create Workbook & Worksheet

@@ -1,373 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <title>Tickets System</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    /* --- STYLES --- */
-    body {
-      margin: 0;
-      font-family: Segoe UI, sans-serif;
-      background: #fff
-    }
-
-    .page {
-      padding: 14px
-    }
-
-    .title-bar {
-      background: #d6ece8;
-      padding: 8px 14px;
-      border-radius: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center
-    }
-
-    .title-bar h2 {
-      margin: 0;
-      font-size: 18px;
-      color: #063b52
-    }
-
-    .new-btn {
-      background: #ffb199;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer
-    }
-
-    .search-row {
-      display: flex;
-      justify-content: flex-end;
-      margin: 8px 0 10px
-    }
-
-    .search-row input {
-      padding: 6px 12px;
-      width: 300px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 8px
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px
-    }
-
-    thead tr {
-      background: #b6e4e5
-    }
-
-    th,
-    td {
-      padding: 8px 12px;
-      border: 1px solid #e0e0e0
-    }
-
-    tbody tr:nth-child(even) {
-      background: #fafafa
-    }
-
-    .ticket-link {
-      color: #2c7be5;
-      text-decoration: underline;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .actions i {
-      margin-right: 8px;
-      cursor: pointer
-    }
-
-    .delete {
-      color: #e63946
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000
-    }
-
-    .modal-content {
-      background: #fff;
-      width: 1000px;
-      padding: 15px 20px;
-      border-radius: 14px;
-      max-height: 95vh;
-      overflow-y: auto;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px 15px;
-    }
-
-    label {
-      font-weight: 600;
-      font-size: 12px;
-      display: block;
-      margin-bottom: 3px;
-      color: #444
-    }
-
-    /* inputs are given a subtle background to differentiate them from labels/headings */
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: 6px 8px;
-      font-size: 13px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      height: 36px;
-      box-sizing: border-box;
-      background: #fafafa;
-    }
-
-    textarea {
-      height: auto;
-      min-height: 40px;
-      resize: vertical;
-      font-family: Segoe UI, sans-serif;
-    }
-
-    /* ensure disabled fields remain visually distinct */
-    input:disabled,
-    select:disabled,
-    textarea:disabled {
-      background-color: #e9ecef;
-      color: #666;
-      border-color: #ddd;
-      cursor: not-allowed;
-    }
-
-    .full {
-      grid-column: 1/-1
-    }
-
-    .span-2 {
-      grid-column: span 2
-    }
-
-    input:disabled,
-    select:disabled,
-    textarea:disabled {
-      background-color: #f0f0f0;
-      color: #666;
-      border-color: #ddd;
-      cursor: not-allowed;
-    }
-
-    .section-title {
-      grid-column: 1 / -1;
-      margin-top: 10px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #063b52;
-      border-bottom: 2px solid #d6ece8;
-      padding-bottom: 5px;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 15px;
-      gap: 12px
-    }
-
-    .btn-cancel {
-      background: #9e9e9e;
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 6px;
-      cursor: pointer
-    }
-
-    .btn-save {
-      background: #1aaa8b;
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 6px;
-      cursor: pointer
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="page">
-    <div class="title-bar">
-      <h2>Tickets</h2>
-      <button class="new-btn" id="btnOpenCreate" style="display:none">+ New</button>
-    </div>
-    <div class="search-row">
-      <input id="searchBox" placeholder="Keyword Search..." onkeyup="filterTable()">
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Ticket Number</th>
-          <th>CIF No</th>
-          <th>Date</th>
-          <th>Priority</th>
-          <th>Severity</th>
-          <th>Affected Users</th>
-          <th>Issue Type</th>
-          <th>Screen</th>
-          <th>Client</th>
-          <th>Assigned To</th>
-          <th>Reported Person</th>
-          <th>Status</th>
-          <th>Time Spent</th>
-          <th>Total Time Spent</th>
-          <th id="actionHeader">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
-
-  <div class="modal" id="manageModal">
-    <div class="modal-content">
-      <h3 id="modalTitle" style="text-align:center; margin-top:0">Manage Ticket</h3>
-      <div class="form-grid">
-        <div class="section-title">Ticket Information</div>
-        <div><label>Project *</label><select id="t_project" class="std-field"></select></div>
-        <div><label>Module Type *</label><select id="t_moduleType" class="std-field"></select></div>
-        <div><label>Module *</label><select id="t_module" class="std-field"></select></div>
-        <div><label>Reported Client *</label><select id="t_client" class="std-field"></select></div>
-        <div><label>Priority *</label>
-          <select id="t_priority" class="std-field">
-            <option value="">Select Priority</option>
-            <option value="P1">P1 - Immediate</option>
-            <option value="P2">P2 - Same Day</option>
-            <option value="P3">P3 - 2-3 days</option>
-            <option value="P4">P4 - Low / KIV</option>
-          </select>
-        </div>
-        <div><label>Severity *</label>
-          <select id="t_severity" class="std-field">
-            <option value="Critical">Critical (Ex. System down / data loss)</option>
-            <option value="High">High (Ex. Major function not working)</option>
-            <option value="Medium">Medium (Ex. Partial issue)</option>
-            <option value="Low">Low (Ex. Minor bug/UI)</option>
-          </select>
-        </div>
-        <div><label>Affected Users</label>
-          <select id="t_affected" class="std-field">
-            <option value="">Select</option>
-            <option value="Single User">Single User</option>
-            <option value="Department">Department</option>
-            <option value="All Users">All Users</option>
-          </select>
-        </div>
-
-        <div><label>Reported Date</label><input type="date" id="t_rDate" class="std-field"></div>
-        <div><label>Reported Person</label><input type="text" id="t_reported_person" class="std-field"
-            placeholder="Name"></div>
-        <div><label>Target Date</label><input type="date" id="t_tDate" class="std-field"></div>
-
-        <div><label>Assigned To</label><select id="t_assigned" class="std-field"></select></div>
-        <div><label>Screen</label><input type="text" id="t_screen" class="std-field" placeholder="Screen Name"></div>
-        <div><label>Short Name</label><input type="text" id="t_short_name" class="std-field" placeholder="Short Name" maxlength="100"></div>
-        <div>
-          <label>Issue Type *</label>
-          <select id="t_issue" class="std-field">
-            <option value="">Select Type</option>
-            <option value="New">New</option>
-            <option value="Bug">Bug</option>
-            <option value="Data Correction">Data Correction</option>
-            <option value="Internal">Internal</option>
-          </select>
-        </div>
-
-        <div>
-          <label>Environment *</label>
-          <select id="t_environment" class="std-field">
-            <option value="beta">Beta</option>
-            <option value="production">Production</option>
-          </select>
-        </div>
-
-        <div class="full"><label>Issue Description</label><textarea id="t_desc" class="std-field"></textarea></div>
-        <div class="full">
-          <label>Attachment</label>
-          <input type="file" id="t_attach_input" class="std-field" multiple>
-          <div id="t_attach_link" style="margin-top:5px; font-size:13px; display:flex; flex-direction:row; gap:10px;">
-          </div>
-        </div>
-
-
-        <div class="full">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-            <label style="margin-bottom: 0;">SQL Script</label>
-            <a href="#" id="btnDownloadSQL" style="font-size: 12px; color: #2c7be5; text-decoration: underline; font-weight: bold; display: none;" onclick="downloadSQLScriptOnly(event)">Download DML Script (.sql)</a>
-          </div>
-          <textarea id="t_sql_script" class="std-field" placeholder="Paste SQL script here..." onkeyup="checkWordCount(this, 10000); toggleSQLDownloadBtn();"></textarea>
-          <div id="sql_word_count" style="font-size: 11px; color: #666;">Words: 0/10000</div>
-        </div>
-
-        <div class="section-title resolution-section">Resolution</div>
-        <div class="resolution-section"><label>Root Cause</label><textarea id="t_root"
-            placeholder="Root cause analysis..."></textarea></div>
-        <div class="resolution-section"><label>Solution</label><textarea id="t_solution"
-            placeholder="Solution details..."></textarea></div>
-        <div class="resolution-section">
-          <label>Status</label>
-          <select id="t_status" onchange="calculateTimePreview()">
-            <option value="Open">Open</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Waiting for confirmation">Waiting for confirmation</option>
-            <option value="KIV">KIV</option>
-            <option value="Closed">Closed</option>
-          </select>
-        </div>
-        <div class="resolution-section">
-          <label>Time Spent</label>
-          <input type="text" id="t_time_display" placeholder="e.g. 2h 30m" title="Enter time spent (e.g. 1d 4h 30m). Auto-filled when closed.">
-        </div>
-
-        <div class="resolution-section full">
-          <label>Database Changes</label>
-          <!-- stored by name so later JS can find it without error -->
-          <textarea id="t_db_changes" name="db_changes" placeholder="Describe DB modifications..."></textarea>
-        </div>
-
-        <div class="resolution-section full">
-          <label>Code Changes</label>
-          <textarea id="t_code_changes" name="code_changes" placeholder="Describe code updates..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('manageModal').style.display='none'">Close</button>
-
-        <!-- PRINT BUTTON (hidden by default) -->
-        <button class="btn-save" id="btnPrint" onclick="printTicket()" style="display:none;background:#4b6cb7">
-          Print
-        </button>
-
-        <button class="btn-save" onclick="saveTicket()">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
 
     const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file") 
         ? "http://127.0.0.1:8000" 
@@ -565,7 +196,7 @@
       manageModal.style.display = "flex";
     }
 
-    async function openManageMode(ticketCode) {
+    async function openManageMode(index) {
       // Log all DOM elements before setting their values
       const elementIds = [
         "t_project", "t_moduleType", "t_client", "t_priority", "t_severity", "t_affected", "t_rDate", "t_reported_person", "t_tDate", "t_issue", "t_environment", "t_sql_script", "t_desc", "t_screen", "t_db_changes", "t_code_changes", "t_root", "t_solution", "t_status", "t_time_display", "manageModal", "modalTitle"
@@ -579,18 +210,18 @@
         }
       });
       try {
-        console.log('openManageMode called', { ticketCode, tickets });
+        console.log('openManageMode called', { index, tickets });
         if (!tickets || !Array.isArray(tickets)) {
           console.error('Tickets array is missing or invalid:', tickets);
           alert('Cannot edit: ticket data not loaded.');
           return;
         }
-        let t = tickets.find(tk => tk.ticket_code === ticketCode);
-        if (!t) {
-          console.error('No ticket found with code:', ticketCode);
-          alert('Cannot edit: ticket not found.');
+        if (typeof index !== 'number' || index < 0 || index >= tickets.length) {
+          console.error('Invalid ticket index:', index);
+          alert('Cannot edit: invalid ticket index.');
           return;
         }
+        let t = tickets[index];
         console.log('Selected ticket from list:', t);
         // fetch fresh copy in case some fields (db/code changes) were not included in the list
         try {
@@ -604,7 +235,7 @@
           console.warn('Unable to fetch ticket detail, using list item', err);
         }
         if (!t) {
-          console.error('No ticket found with code:', ticketCode);
+          console.error('No ticket found at index:', index);
           alert('Cannot edit: ticket not found.');
           return;
         }
@@ -658,7 +289,7 @@
         document.getElementById("t_root").value = t.root_cause || "";
         document.getElementById("t_solution").value = t.solution || "";
         document.getElementById("t_status").value = t.status || "Open";
-        document.getElementById("t_time_display").value = t.actual_time_spent || "";
+        document.getElementById("t_time_display").innerText = t.actual_time_spent || "-";
 
         // Render existing attachments
         renderExistingFiles(t.attachment, "t_attach_link");
@@ -764,8 +395,8 @@
         const status = document.getElementById("t_status").value;
         formData.append("status", status);
 
-        let timeSpent = document.getElementById("t_time_display").value.trim();
-        if (status === "Closed" && !timeSpent) {
+        let timeSpent = document.getElementById("t_time_display").innerText;
+        if (status === "Closed" && (timeSpent === "-" || !timeSpent)) {
           timeSpent = calculateTimeDiff();
         }
         formData.append("actual_time_spent", timeSpent);
@@ -841,9 +472,8 @@
     function calculateTimePreview() {
       const status = document.getElementById("t_status").value;
       const timeDisplay = document.getElementById("t_time_display");
-      // Auto-fill only if field is empty and ticket is being closed
-      if (status === "Closed" && currentTicketData && !timeDisplay.value.trim()) {
-        timeDisplay.value = calculateTimeDiff();
+      if (status === "Closed" && currentTicketData) {
+        timeDisplay.innerText = calculateTimeDiff();
       }
     }
 
@@ -877,7 +507,7 @@
         row.style.alignItems = "center";
         const link = document.createElement("a");
         link.textContent = f;
-        link.href = `${BASE_API_URL}/uploaded_files/${f.trim()}`;
+        link.href = "/uploaded_files/" + f;
         link.target = "_blank";
         link.style.color = "#2c7be5";
         link.style.textDecoration = "underline";
@@ -889,11 +519,11 @@
 
 
 
-    function calculateTotalSpent(createdAt, endedAt = null) {
+    function calculateTotalSpent(createdAt) {
       if (!createdAt) return "-";
       const start = new Date(createdAt);
-      const end = endedAt ? new Date(endedAt) : new Date();
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) return "-";
+      const end = new Date();
+      if (isNaN(start.getTime())) return "-";
       const diffMs = end - start;
       if (diffMs < 0) return "0m";
       const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -931,7 +561,7 @@
       const files = attachmentStr.split(",");
       files.forEach(f => {
         const link = document.createElement("a");
-        link.href = `${BASE_API_URL}/uploaded_files/${f.trim()}`;
+        link.href = "/uploaded_files/" + f;
         link.download = f;
         document.body.appendChild(link);
         link.click();
@@ -1062,18 +692,18 @@
               : "";
             const downloadBtn = `<i class="fa fa-download" title="Download Ticket Info" style="color:#2c7be5;" onclick="downloadTicketAsText('${t.ticket_code}')"></i>`;
             actionsCell = `<td class="actions">
-              <i class="fa fa-pen edit" onclick="openManageMode('${t.ticket_code}')"></i>
+              <i class="fa fa-pen edit" onclick="openManageMode(${i})"></i>
               ${downloadBtn}
               ${printBtn}
               <i class="fa fa-times delete" onclick="deleteTicket('${t.ticket_code}')"></i>
             </td>`;
           }
           const statusColor = (t.status === "Closed") ? "#e63946" : "#28a745";
-          const totalTimeSpent = (t.status === "Closed")
-            ? (t.total_time_spent || calculateTotalSpent(t.created_at, t.updated_at))
+          const totalTimeSpent = (t.status === "Closed" && t.total_time_spent)
+            ? t.total_time_spent
             : calculateTotalSpent(t.created_at);
           rows.push(`<tr>
-            <td><span class="ticket-link" onclick="openManageMode('${t.ticket_code}')">${t.ticket_code || "-"}</span></td>
+            <td><span class="ticket-link" onclick="openManageMode(${i})">${t.ticket_code || "-"}</span></td>
             <td>${t.cif_no || "-"}</td>
             <td>${t.reported_date || "-"}</td>
             <td>${t.priority || "-"}</td>
@@ -1103,7 +733,4 @@
     }
 
 
-  </script>
-</body>
-
-</html>
+  
