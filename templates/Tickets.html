@@ -1040,12 +1040,12 @@
 
       if (dateVal) dateVal = dateVal.replace(/-/g, '');
 
-      let filename = "TKT";
+      let filename = t.ticket_code || "TKT";
       if (dateVal) filename += `-${dateVal}`;
       if (moduleName) filename += `_${moduleName}`;
       if (shortName) filename += `_${shortName}`;
 
-      filename = filename.replace(/[/\\?%*:|"<> ]/g, '_').trim();
+      filename = filename.replace(/[/\\?%*:|"<> ,]/g, '_').trim();
       filename = filename.replace(/_+/g, '_');
       filename = filename.replace(/_+$/, '');
       if (!filename || filename === "_") filename = "ticket_details";
