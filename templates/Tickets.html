@@ -285,7 +285,8 @@
 
         <div><label>Assigned To</label><select id="t_assigned" class="std-field"></select></div>
         <div><label>Screen</label><input type="text" id="t_screen" class="std-field" placeholder="Screen Name"></div>
-        <div><label>Short Name</label><input type="text" id="t_short_name" class="std-field" placeholder="Short Name" maxlength="100"></div>
+        <div><label>Short Name</label><input type="text" id="t_short_name" class="std-field" placeholder="Short Name"
+            maxlength="100"></div>
         <div>
           <label>Issue Type *</label>
           <select id="t_issue" class="std-field">
@@ -317,9 +318,12 @@
         <div class="full">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
             <label style="margin-bottom: 0;">SQL Script</label>
-            <a href="#" id="btnDownloadSQL" style="font-size: 12px; color: #2c7be5; text-decoration: underline; font-weight: bold; display: none;" onclick="downloadSQLScriptOnly(event)">Download DML Script (.sql)</a>
+            <a href="#" id="btnDownloadSQL"
+              style="font-size: 12px; color: #2c7be5; text-decoration: underline; font-weight: bold; display: none;"
+              onclick="downloadSQLScriptOnly(event)">Download DML Script (.sql)</a>
           </div>
-          <textarea id="t_sql_script" class="std-field" placeholder="Paste SQL script here..." onkeyup="checkWordCount(this, 10000); toggleSQLDownloadBtn();"></textarea>
+          <textarea id="t_sql_script" class="std-field" placeholder="Paste SQL script here..."
+            onkeyup="checkWordCount(this, 10000); toggleSQLDownloadBtn();"></textarea>
           <div id="sql_word_count" style="font-size: 11px; color: #666;">Words: 0/10000</div>
         </div>
 
@@ -340,7 +344,8 @@
         </div>
         <div class="resolution-section">
           <label>Time Spent</label>
-          <input type="text" id="t_time_display" placeholder="e.g. 2h 30m" title="Enter time spent (e.g. 1d 4h 30m). Auto-filled when closed.">
+          <input type="text" id="t_time_display" placeholder="e.g. 2h 30m"
+            title="Enter time spent (e.g. 1d 4h 30m). Auto-filled when closed.">
         </div>
 
         <div class="resolution-section full">
@@ -369,9 +374,9 @@
 
   <script>
 
-    const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file") 
-        ? "http://127.0.0.1:8000" 
-        : window.location.origin;
+    const BASE_API_URL = window.location.origin === "null" || window.location.origin.startsWith("file")
+      ? "http://127.0.0.1:8000"
+      : window.location.origin;
     const API_BASE = `${BASE_API_URL}/api/tickets`;
     let tickets = [];
     let currentTicketCode = null;
@@ -544,7 +549,7 @@
       document.getElementById("t_status").value = "Open";
       document.getElementById("t_affected").value = "";
       document.getElementById("t_environment").value = "beta";
-      
+
       const now = new Date();
       document.getElementById("t_rDate").valueAsDate = now;
       document.getElementById("t_reported_person").value = ""; // Clear Name
@@ -945,7 +950,7 @@
         alert("Ticket not found.");
         return;
       }
-      
+
       let execDateStr = t.reported_date || "";
       if (execDateStr) {
         const parts = execDateStr.split('-');
@@ -960,15 +965,15 @@
       } else {
         execDateStr = "N/A";
       }
-      
+
       let moduleVal = t.module_name || "N/A";
       if (moduleVal !== "N/A" && !moduleVal.toLowerCase().includes("module")) {
         moduleVal += " Module";
       }
-      
+
       const loggedInUser = localStorage.getItem("username") || t.assigned_to_name || "N/A";
       const environmentStr = (t.environment || "BETA").toUpperCase();
-      
+
       let textContent = "";
       textContent += `Ticket No      : ${t.ticket_code}\n`;
       textContent += `Module         : ${moduleVal}\n`;
@@ -978,13 +983,13 @@
       textContent += `Approved By    : Uma\n`;
       textContent += `Environment    : ${environmentStr}\n`;
       textContent += `Execution Date : ${execDateStr}\n`;
-      
+
       textContent += `\nIssue Description:\n-----------------\n${t.issue_desc || "No description provided."}\n`;
-      
+
       if (t.sql_script) {
         textContent += `\nDML Script:\n-----------------\n${t.sql_script}\n`;
       }
-      
+
       if (t.root_cause) {
         textContent += `\nRoot Cause:\n-----------------\n${t.root_cause}\n`;
       }
@@ -997,14 +1002,14 @@
       if (t.code_changes) {
         textContent += `\nCode Changes:\n-----------------\n${t.code_changes}\n`;
       }
-      
+
       const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      
+
       let codeName = t.ticket_code || "Ticket";
       let dateVal = execDateStr !== "N/A" ? execDateStr : (t.reported_date || "");
-      
+
       // Extract the 2-letter uppercase abbreviation for the module chosen, e.g. "Sales" -> "SM"
       let moduleName = "";
       if (t.module_name && t.module_name !== "N/A") {
@@ -1030,18 +1035,22 @@
           }
         }
       }
-      
+
       let shortName = t.short_name || t.issue_short || "";
-      
-      let filename = codeName;
-      if (dateVal) filename += `_${dateVal}`;
-      if (moduleName) filename += `, ${moduleName}`;
-      if (shortName) filename += `, ${shortName}`;
-      
-      filename = filename.replace(/[/\\?%*:|"<>]/g, '-').trim();
-      if (!filename) filename = "ticket_details";
-      
-      link.download = `${filename}.txt`;
+
+      if (dateVal) dateVal = dateVal.replace(/-/g, '');
+
+      let filename = "TKT";
+      if (dateVal) filename += `-${dateVal}`;
+      if (moduleName) filename += `_${moduleName}`;
+      if (shortName) filename += `_${shortName}`;
+
+      filename = filename.replace(/[/\\?%*:|"<> ]/g, '_').trim();
+      filename = filename.replace(/_+/g, '_');
+      filename = filename.replace(/_+$/, '');
+      if (!filename || filename === "_") filename = "ticket_details";
+
+      link.download = `${filename}.TXT`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -1,0 +1,8 @@
+{
+  "name": "resolvex-frontend",
+  "version": "1.0.0",
+  "description": "Static frontend server for ResolveX Support Tool",
+  "scripts": {
+    "dev": "npx live-server --port=5500"
+  }
+}
